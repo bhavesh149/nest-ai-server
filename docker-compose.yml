@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: ai-chat-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: ai-chat-platform
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - ai-chat-network
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: ai-chat-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai-chat-network
+
+  # NestJS Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-chat-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/ai-chat-platform?authSource=admin
+      JWT_SECRET: your-super-secure-production-jwt-secret
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      FRONTEND_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - ai-chat-network
+    volumes:
+      - ./logs:/app/logs
+
+  # MongoDB Express (Database Admin UI)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: ai-chat-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - ai-chat-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  ai-chat-network:
+    driver: bridge
