@@ -58,10 +58,10 @@ export class StatsService {
       if (userMessageCounts.has(userId)) {
         userMessageCounts.get(userId)!.count += messageCount;
       } else {
-        const user = await this.userModel.findById(userId).select('email');
+        const user = await this.userModel.findById(userId).select('email mobileNumber');
         if (user) {
           userMessageCounts.set(userId, {
-            email: user.email,
+            email: user.email || user.mobileNumber || 'Unknown',
             count: messageCount,
           });
         }
