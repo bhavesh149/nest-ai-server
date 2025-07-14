@@ -99,6 +99,14 @@ export class GeminiService {
       this.generateStreamResponseInternal(messages, subscriber);
     });
   }
+  
+  generateChatTitle(firstMessage: string): string {
+    // Generate a title from the first message (first 50 characters)
+    const title = firstMessage.length > 50 
+      ? firstMessage.substring(0, 50) + '...' 
+      : firstMessage;
+    return title;
+  }
 
   private async generateStreamResponseInternal(messages: ChatMessage[], subscriber: any): Promise<void> {
     try {
@@ -130,12 +138,5 @@ export class GeminiService {
       subscriber.error(new Error('Failed to stream AI response'));
     }
   }
-
-  generateChatTitle(firstMessage: string): string {
-    // Generate a title from the first message (first 50 characters)
-    const title = firstMessage.length > 50 
-      ? firstMessage.substring(0, 50) + '...' 
-      : firstMessage;
-    return title;
-  }
 }
+

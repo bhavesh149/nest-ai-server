@@ -12,6 +12,8 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+*.zip
+
 # OS
 .DS_Store
 
@@ -58,3 +60,15 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 README-API.md
 PROJECT-SUMMARY.md
 .env
+
+backup_20250714_210042
+lambda-final-package
+lambda-fixed-package
+lambda-package
+lambda-package-20250714_210042  
+lambda-complete-deployment
+*.ps1
+frontend
+.serverless
+.build
+temp-test

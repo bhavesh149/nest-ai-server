@@ -7,7 +7,9 @@ import { CacheService } from './cache.service';
     CacheModule.register({
       isGlobal: true,
       ttl: 300, // 5 minutes default TTL
-      max: 100, // maximum number of items in cache
+      max: 50, // Reduce cache size for Lambda
+      // Use memory store for Lambda (Redis might timeout)
+      store: 'memory',
     }),
   ],
   providers: [CacheService],

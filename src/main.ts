@@ -4,6 +4,11 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
+  // Skip bootstrap if running in Lambda environment
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return;
+  }
+
   const app = await NestFactory.create(AppModule);
   
   const configService = app.get(ConfigService);

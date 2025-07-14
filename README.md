@@ -1,43 +1,41 @@
-# AI Chat Platform Backend
+# NestJS AI Server for AWS Lambda
 
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-A powerful AI-powered chat platform built with NestJS, featuring Google Gemini integration, OTP-based authentication, subscription management, and intelligent rate limiting.
+A production-ready NestJS application that provides AI chat functionality using Google's Gemini API, deployed on AWS Lambda.
 
 ## Features
 
-- 🔐 **OTP-based Authentication** - Secure mobile number verification
-- 🤖 **Google Gemini AI Integration** - Context-aware conversations
-- 💬 **User-specific Chatrooms** - Manage multiple conversation threads
-- 🎯 **Subscription Management** - Basic/Pro tiers with Stripe integration
-- ⚡ **Redis Queue System** - Asynchronous message processing
-- 🛡️ **Rate Limiting** - Smart limits based on subscription tier
+- 🤖 **Google Gemini AI Integration** - Advanced AI chat capabilities
+- � **JWT Authentication** - Secure user authentication system
+- ⚡ **AWS Lambda Optimized** - Serverless deployment ready
+- 💾 **MongoDB Integration** - Persistent data storage
+- 🛡️ **Rate Limiting** - Protection against excessive API usage
 - 📊 **Admin Dashboard** - System monitoring and user management
-- 🐳 **Docker Support** - Easy deployment and scaling
+- � **Comprehensive Error Handling** - Detailed error responses
+- 🌐 **RESTful API** - Clean and consistent endpoints
 
 ## Tech Stack
 
 - **Framework**: NestJS (TypeScript)
 - **Database**: MongoDB with Mongoose
-- **Cache & Queue**: Redis with Bull Queue
 - **AI Service**: Google Gemini API
-- **Payment**: Stripe API
-- **Authentication**: JWT with bcrypt
+- **Serverless**: AWS Lambda with Express adapter
+- **Authentication**: JWT
 - **Validation**: class-validator, class-transformer
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- MongoDB database
-- Redis server (optional, with fallback)
+- Node.js (v20 or higher)
+- MongoDB database (Atlas recommended)
 - Google Gemini API key
-- Stripe account (for subscriptions)
+- AWS account with Lambda access
 
-### Environment Setup
+### Quick Setup
 
 1. Clone the repository:
 ```bash
@@ -50,130 +48,105 @@ cd nest-ai-server
 npm install
 ```
 
-3. Create `.env` file:
-```env
-# Database
-MONGO_URI=mongodb://localhost:27017/ai-chat-platform
+## Deployment to AWS Lambda
 
-# JWT Configuration
-JWT_SECRET=your-jwt-secret-key-here
+We've created a suite of scripts to simplify the deployment process:
 
-# Google Gemini API
-GEMINI_API_KEY=your-gemini-api-key
+```powershell
+# Opens an interactive maintenance menu
+.\maintain-lambda.ps1
 
-# Redis (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# Stripe
-STRIPE_SECRET_KEY=your-stripe-secret-key
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-
-# Application
-PORT=3000
-NODE_ENV=development
+# Or run specific actions directly:
+.\maintain-lambda.ps1 -Action build    # Build deployment package
+.\maintain-lambda.ps1 -Action deploy   # Show deployment instructions
+.\maintain-lambda.ps1 -Action test     # Test Lambda URL
+.\maintain-lambda.ps1 -Action cleanup  # Clean up project files
 ```
 
-4. Start services with Docker (recommended):
-```bash
-docker-compose up -d
+### Deployment Steps
+
+1. Build the deployment package with `.\fix-lambda-handler-package.ps1`
+2. Upload the generated `lambda-fixed-handler-package.zip` to AWS Lambda
+3. Set the handler to `index.handler`
+4. Configure environment variables (see below)
+5. Test the deployment with `.\test-lambda-url.ps1`
+
+### Configuration
+
+Required environment variables:
+
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/dbname
+JWT_SECRET=your_jwt_secret_key
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Or manually start MongoDB and Redis on your system.
+Optional configuration:
 
-5. Run the application:
+```
+PORT=3000                  # For local development
+NODE_ENV=production        # Set to production for Lambda
+RATE_LIMIT_MAX=100        # Maximum requests per window
+RATE_LIMIT_WINDOW=60000   # Time window in ms (60 seconds)
+```
+
+### AWS Lambda Configuration
+
+- **Handler**: `index.handler`
+- **Runtime**: Node.js 20.x
+- **Memory**: 512 MB minimum (1024 MB recommended)
+- **Timeout**: 30 seconds
+- **Environment Variables**: See above
+
+### Local Development
+
 ```bash
-# Development mode
+# Install dependencies
+npm install
+
+# Run in development mode
 npm run start:dev
 
-# Production mode
-npm run build
-npm run start:prod
-```
-
-### Initial Setup
-
-Seed the database with initial data:
-```bash
-npm run seed
+# Run tests
+npm test
 ```
 
 ## API Documentation
 
-The server runs on `http://localhost:3000` by default.
+The API provides RESTful endpoints for authentication, chat functionality, and admin operations. 
+Comprehensive API documentation is available in the included Postman collection.
+
+### Key Endpoints
 
 ### Health Check
 ```bash
 GET /health
 ```
 
-### Authentication APIs
+### Authentication
 
-#### 1. User Registration
 ```bash
-POST /auth/signup
-Content-Type: application/json
+# User Registration
+POST /auth/register
 
-{
-  "email": "user@example.com",
-  "mobileNumber": "+1234567890",
-  "password": "securePassword123",
-  "name": "John Doe"
-}
-```
-
-#### 2. Send OTP
-```bash
-POST /auth/send-otp
-Content-Type: application/json
-
-{
-  "mobileNumber": "+1234567890"
-}
-```
-
-#### 3. Verify OTP
-```bash
-POST /auth/verify-otp
-Content-Type: application/json
-
-{
-  "mobileNumber": "+1234567890",
-  "otp": "123456"
-}
-```
-
-#### 4. Login
-```bash
+# Login
 POST /auth/login
-Content-Type: application/json
 
-{
-  "email": "user@example.com",
-  "password": "securePassword123"
-}
+# Get user profile
+GET /auth/profile
 ```
 
-#### 5. Forgot Password
+### Chat
+
 ```bash
-POST /auth/forgot-password
-Content-Type: application/json
+# Get AI chat response
+POST /chat/completion
 
-{
-  "email": "user@example.com"
-}
-```
+# Get chat history
+GET /chat/history
 
-#### 6. Change Password
-```bash
-POST /auth/change-password
-Authorization: Bearer <jwt-token>
-Content-Type: application/json
-
-{
-  "currentPassword": "oldPassword123",
-  "newPassword": "newPassword123"
-}
+# Create new chat
+POST /chat/create
 ```
 
 ### User APIs

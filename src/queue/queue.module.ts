@@ -11,13 +11,35 @@ import { Chatroom, ChatroomSchema } from '../schemas/chatroom.schema';
   imports: [
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        redis: {
-          host: configService.get('redis.host'),
-          port: configService.get('redis.port'),
-          password: configService.get('redis.password') || undefined,
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        // Use in-memory fallback for Lambda if Redis is not available
+        const redisHost = configService.get('redis.host') || process.env.REDIS_HOST;
+        
+        if (!redisHost) {
+          console.warn('Redis not configured, using fallback queue processing');
+          return {
+            redis: {
+              host: 'localhost',
+              port: 6379,
+              lazyConnect: true,
+              maxRetriesPerRequest: 1,
+            },
+          };
+        }
+
+        const redisPort = parseInt(configService.get('redis.port') || process.env.REDIS_PORT || '6379', 10);
+
+        return {
+          redis: {
+            host: redisHost,
+            port: redisPort,
+            password: configService.get('redis.password') || process.env.REDIS_PASSWORD || undefined,
+            connectTimeout: 10000,
+            lazyConnect: true,
+            maxRetriesPerRequest: 3,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     BullModule.registerQueue({

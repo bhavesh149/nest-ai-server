@@ -11,7 +11,8 @@ import { UserModule } from './user/user.module';
 import { ChatModule } from './chat/chat.module';
 import { ChatroomModule } from './chatroom/chatroom.module';
 import { GeminiModule } from './gemini/gemini.module';
-import { GroqModule } from './groq/groq.module';
+// Disabled Groq module
+// import { GroqModule } from './groq/groq.module';
 import { QueueModule } from './queue/queue.module';
 import { SubscriptionController } from './subscription/subscription.controller';
 import { SubscriptionService } from './subscription/subscription.service';
@@ -35,6 +36,12 @@ import { Subscription, SubscriptionSchema } from './schemas/subscription.schema'
     MongooseModule.forRootAsync({
       useFactory: async () => ({
         uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-chat-platform',
+        // Serverless optimizations for Lambda
+        bufferCommands: false, // Disable mongoose buffering
+        maxPoolSize: 1, // Maintain up to 1 socket connection
+        serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+        socketTimeoutMS: 45000, // Close connections after 45 seconds of inactivity
+        family: 4, // Use IPv4, skip trying IPv6
       }),
     }),
     MongooseModule.forFeature([
@@ -47,7 +54,7 @@ import { Subscription, SubscriptionSchema } from './schemas/subscription.schema'
     ChatModule,
     ChatroomModule,
     GeminiModule,
-    GroqModule,
+    // GroqModule removed - using Gemini instead
     QueueModule,
     AdminModule,
     DatabaseModule,

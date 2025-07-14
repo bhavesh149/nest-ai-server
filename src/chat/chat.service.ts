@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Chat, ChatDocument, Message } from '../schemas/chat.schema';
-import { GroqService, ChatMessage } from '../groq/groq.service';
+import { GeminiService, ChatMessage } from '../gemini/gemini.service';
 import { SendMessageDto, CreateChatDto, ChatResponseDto } from './dto/chat.dto';
 import { Observable } from 'rxjs';
 
@@ -10,7 +10,7 @@ import { Observable } from 'rxjs';
 export class ChatService {
   constructor(
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
-    private groqService: GroqService,
+    private geminiService: GeminiService,
   ) {}
 
   async createChat(userId: string, createChatDto: CreateChatDto): Promise<ChatResponseDto> {
@@ -49,7 +49,7 @@ export class ChatService {
       chat = foundChat;
     } else {
       // Create new chat
-      const title = this.groqService.generateChatTitle(message);
+      const title = this.geminiService.generateChatTitle(message);
       chat = new this.chatModel({
         userId: new Types.ObjectId(userId),
         title,
@@ -64,34 +64,34 @@ export class ChatService {
       timestamp: new Date(),
     });
 
-    // Prepare messages for Groq API
-    const groqMessages: ChatMessage[] = [
+    // Prepare messages for Gemini API
+    const geminiMessages: ChatMessage[] = [
       {
-        role: 'system',
-        content: 'You are a helpful AI assistant. Provide helpful, accurate, and concise responses.',
+        role: 'user', // Gemini uses 'user' for system messages
+        parts: 'You are a helpful AI assistant. Provide helpful, accurate, and concise responses.',
       },
     ];
 
     // Add conversation history
     if (history && history.length > 0) {
       history.forEach(msg => {
-        groqMessages.push({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content,
+        geminiMessages.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: msg.content,
         });
       });
     } else {
       // Use messages from existing chat
       chat.messages.slice(-10).forEach(msg => { // Last 10 messages for context
-        groqMessages.push({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content,
+        geminiMessages.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: msg.content,
         });
       });
     }
 
     // Get AI response
-    const aiResponse = await this.groqService.generateResponse(groqMessages);
+    const aiResponse = await this.geminiService.generateResponse(geminiMessages);
 
     // Add AI response to chat
     chat.messages.push({
@@ -135,7 +135,7 @@ export class ChatService {
         }
         chat = foundChat;
       } else {
-        const title = this.groqService.generateChatTitle(message);
+        const title = this.geminiService.generateChatTitle(message);
         chat = new this.chatModel({
           userId: new Types.ObjectId(userId),
           title,
@@ -159,27 +159,27 @@ export class ChatService {
         },
       });
 
-      // Prepare messages for Groq API
-      const groqMessages: ChatMessage[] = [
+      // Prepare messages for Gemini API
+      const geminiMessages: ChatMessage[] = [
         {
-          role: 'system',
-          content: 'You are a helpful AI assistant. Provide helpful, accurate, and concise responses.',
+          role: 'user', // Gemini uses 'user' for system messages
+          parts: 'You are a helpful AI assistant. Provide helpful, accurate, and concise responses.',
         },
       ];
 
       // Add conversation history
       if (history && history.length > 0) {
         history.forEach(msg => {
-          groqMessages.push({
-            role: msg.role as 'user' | 'assistant',
-            content: msg.content,
+          geminiMessages.push({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: msg.content,
           });
         });
       } else {
         chat.messages.slice(-10).forEach(msg => {
-          groqMessages.push({
-            role: msg.role as 'user' | 'assistant',
-            content: msg.content,
+          geminiMessages.push({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: msg.content,
           });
         });
       }
@@ -187,7 +187,7 @@ export class ChatService {
       let fullResponse = '';
 
       // Stream AI response
-      const streamSubscription = this.groqService.generateStreamResponse(groqMessages).subscribe({
+      const streamSubscription = this.geminiService.generateStreamResponse(geminiMessages).subscribe({
         next: (chunk) => {
           fullResponse += chunk;
           subscriber.next({

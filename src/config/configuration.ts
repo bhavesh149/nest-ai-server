@@ -17,8 +17,9 @@ export const databaseConfig = () => ({
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || 'AIzaSyAIy_wx_YKesm9thrWcqRlNnC50L6ww3Hc',
   },
+  // Disabled Groq integration
   groq: {
-    apiKey: process.env.GROQ_API_KEY || '',
+    apiKey: null, // Setting to null to prevent any accidental usage
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
